@@ -27,5 +27,5 @@ exit
 docker compose exec app php artisan migrate
 
 5. 動作確認
-- Laravel: http://localhost
-- phpMyAdmin: http://localhost:8080（サーバ: `db`）
+ Laravel: http://localhost
+ phpMyAdmin: http://localhost:8080（サーバ: `db`）
