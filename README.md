@@ -100,16 +100,6 @@ events     1 ── * reservations
 
 ## スクリーンショット
 
-### ブログシステム
-
-| 投稿一覧(ページネーション付き) | 投稿詳細 |
-| --- | --- |
-| ![投稿一覧](docs/images/posts-index.png) | ![投稿詳細](docs/images/post-show.png) |
-
-| 投稿作成 |
-| --- |
-| ![投稿作成](docs/images/post-create.png) |
-
 ### イベント予約システム
 
 | イベント一覧 | イベント詳細 |
