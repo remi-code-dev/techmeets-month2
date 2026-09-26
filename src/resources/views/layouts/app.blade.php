@@ -10,7 +10,11 @@
     <nav class="navbar navbar-expand navbar-dark bg-dark mb-4">
         <div class="container">
             <a class="navbar-brand" href="{{ route('posts.index') }}">My Blog</a>
-            <a class="btn btn-outline-light btn-sm" href="{{ route('posts.create') }}">新規投稿</a>
+            <div class="d-flex gap-2">
+                <a class="btn btn-outline-light btn-sm" href="{{ route('events.index') }}">イベント</a>
+                <a class="btn btn-outline-light btn-sm" href="{{ route('reservations.index') }}">予約一覧</a>
+                <a class="btn btn-outline-light btn-sm" href="{{ route('posts.create') }}">新規投稿</a>
+            </div>
         </div>
     </nav>
 
