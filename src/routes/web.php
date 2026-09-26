@@ -9,7 +9,7 @@ Route::redirect('/', '/posts');
 
 Route::resource('posts', PostController::class);
 
-Route::resource('events', EventController::class)->only(['index', 'show']);
+Route::resource('events', EventController::class)->only(['index', 'create', 'store', 'show']);
 
 Route::get('events/{event}/reservations/create', [ReservationController::class, 'create'])
     ->name('reservations.create');
