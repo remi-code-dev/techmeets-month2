@@ -141,34 +141,64 @@ src/
 └── routes/web.php
 ```
 
-## 環境構築
+## 環境構築(clone した人向け)
 
-1. コンテナの起動
-docker compose up -d
+Laravel 本体はこのリポジトリの `src/` に含まれているため、`composer create-project` は不要です。
+事前に Docker Desktop(Docker Compose)をインストールしてください。
 
-2. Laravelのインストール
-docker compose exec app bash
-→コンテナ内のLinuxターミナルが開く
-composer create-project laravel/laravel .
-→Laravelのインストールを実行するコマンド
-chown -R www-data:www-data storage bootstrap/cache
-chmod -R 775 storage bootstrap/cache
-→権限の設定。Laravelがログファイル等を書き込めるようにする
-exit
-→コンテナから出る
+### 1. リポジトリの取得
 
-3. .envのDB設定の編集
-　DB_CONNECTION=mysql
-　DB_HOST=db
-　DB_PORT=3306
-　DB_DATABASE=laravel
-　DB_USERNAME=root
-　DB_PASSWORD=secret
+```bash
+git clone https://github.com/remi-code-dev/techmeets-month2.git
+cd techmeets-month2
+```
 
-4. マイグレーションと初期データの投入
+### 2. Docker 用の環境変数ファイルを作成
+
+```bash
+cp .env.example .env
+```
+
+`docker-compose.yml` が読み込む設定です。ポート番号やDBパスワードは必要に応じて `.env` で変更できます。
+
+| 変数 | 既定値 | 説明 |
+| --- | --- | --- |
+| `NGINX_PORT` | 80 | Laravel にアクセスするポート |
+| `DB_PORT` | 3306 | MySQL に公開するポート |
+| `PMA_PORT` | 8080 | phpMyAdmin にアクセスするポート |
+| `DB_PASSWORD` | secret | MySQL の root パスワード(`docker-compose.yml` の3か所で共通利用) |
+
+### 3. コンテナの起動
+
+```bash
+docker compose up -d --build
+```
+
+### 4. Laravel のセットアップ
+
+```bash
+# Laravel 用の .env を作成(DB設定は MySQL 用になっています)
+cp src/.env.example src/.env
+
+# 依存パッケージのインストール
+docker compose exec app composer install
+
+# アプリケーションキーの生成
+docker compose exec app php artisan key:generate
+
+# 権限の設定(Laravel がログ等を書き込めるようにする)
+docker compose exec app chown -R www-data:www-data storage bootstrap/cache
+docker compose exec app chmod -R 775 storage bootstrap/cache
+
+# マイグレーションと初期データの投入
 docker compose exec app php artisan migrate --seed
-→カテゴリー4件(お知らせ・技術・日記・レビュー)とイベント3件(グッズ先行販売)が登録されます
+```
 
-5. 動作確認
- Laravel: http://localhost
- phpMyAdmin: http://localhost:8080（サーバ: `db`）
+`.env` の `DB_PASSWORD` を変更した場合は、`src/.env` の `DB_PASSWORD` も同じ値にしてください。
+
+初期データとして、カテゴリー4件(お知らせ・技術・日記・レビュー)とイベント3件(グッズ先行販売)が登録されます。
+
+### 5. 動作確認
+
+- Laravel: http://localhost(`NGINX_PORT` を変えた場合は `http://localhost:{NGINX_PORT}`)
+- phpMyAdmin: http://localhost:8080(サーバ: `db`、ユーザー: `root`)
