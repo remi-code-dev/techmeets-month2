@@ -60,6 +60,10 @@ class PostController extends Controller
      */
     public function edit(Post $post): View
     {
+        if ($post->user_id !== auth()->id()) {
+        abort(403, 'この操作は許可されていません');
+    }
+
         $categories = Category::orderBy('name')->get();
 
         return view('posts.edit', compact('post', 'categories'));
@@ -70,6 +74,9 @@ class PostController extends Controller
      */
     public function update(UpdatePostRequest $request, Post $post): RedirectResponse
     {
+        if ($post->user_id !== auth()->id()) {
+            abort(403, 'この操作は許可されていません');
+        }
         $post->update($request->validated());
 
         return redirect()
@@ -82,6 +89,9 @@ class PostController extends Controller
      */
     public function destroy(Post $post): RedirectResponse
     {
+        if ($post->user_id !== auth()->id()) {
+            abort(403, 'この操作は許可されていません');
+        }
         $post->delete();
 
         return redirect()
