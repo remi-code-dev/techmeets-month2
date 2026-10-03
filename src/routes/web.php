@@ -1,21 +1,23 @@
 <?php
 
-use App\Http\Controllers\EventController;
+use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\PostController;
-use App\Http\Controllers\ReservationController;
 use Illuminate\Support\Facades\Route;
 
-Route::redirect('/', '/posts');
+Route::get('/', function () {
+    return view('welcome');
+});
 
-Route::resource('posts', PostController::class);
+Route::get('/dashboard', function () {
+    return view('dashboard');
+})->middleware(['auth', 'verified'])->name('dashboard');
 
-Route::resource('events', EventController::class)->only(['index', 'create', 'store', 'show']);
+Route::middleware('auth')->group(function () {
+    Route::get('/profile', [ProfileController::class, 'edit'])->name('profile.edit');
+    Route::patch('/profile', [ProfileController::class, 'update'])->name('profile.update');
+    Route::delete('/profile', [ProfileController::class, 'destroy'])->name('profile.destroy');
 
-Route::get('events/{event}/reservations/create', [ReservationController::class, 'create'])
-    ->name('reservations.create');
-Route::post('events/{event}/reservations', [ReservationController::class, 'store'])
-    ->name('reservations.store');
-Route::get('reservations', [ReservationController::class, 'index'])
-    ->name('reservations.index');
-Route::patch('reservations/{reservation}/cancel', [ReservationController::class, 'cancel'])
-    ->name('reservations.cancel');
+    Route::resource('posts', PostController::class);
+});
+
+require __DIR__.'/auth.php';
