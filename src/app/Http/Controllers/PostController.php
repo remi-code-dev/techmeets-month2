@@ -2,11 +2,11 @@
 
 namespace App\Http\Controllers;
 
-use App\Http\Requests\StorePostRequest;
-use App\Http\Requests\UpdatePostRequest;
+use App\Http\Requests\PostRequest;
 use App\Models\Category;
 use App\Models\Post;
 use Illuminate\Http\RedirectResponse;
+use Illuminate\Support\Facades\Gate;
 use Illuminate\View\View;
 
 class PostController extends Controller
@@ -36,9 +36,10 @@ class PostController extends Controller
     /**
      * 投稿の保存
      */
-    public function store(StorePostRequest $request): RedirectResponse
+    public function store(PostRequest $request): RedirectResponse
     {
-        $post = Post::create($request->validated());
+        // 投稿者はリクエストではなくログインユーザーから設定する
+        $post = $request->user()->posts()->create($request->validated());
 
         return redirect()
             ->route('posts.show', $post)
@@ -50,7 +51,7 @@ class PostController extends Controller
      */
     public function show(Post $post): View
     {
-        $post->load('category');
+        $post->load(['category', 'user']);
 
         return view('posts.show', compact('post'));
     }
@@ -60,6 +61,8 @@ class PostController extends Controller
      */
     public function edit(Post $post): View
     {
+        Gate::authorize('update', $post);
+
         $categories = Category::orderBy('name')->get();
 
         return view('posts.edit', compact('post', 'categories'));
@@ -68,8 +71,10 @@ class PostController extends Controller
     /**
      * 投稿の更新
      */
-    public function update(UpdatePostRequest $request, Post $post): RedirectResponse
+    public function update(PostRequest $request, Post $post): RedirectResponse
     {
+        Gate::authorize('update', $post);
+
         $post->update($request->validated());
 
         return redirect()
@@ -82,6 +87,8 @@ class PostController extends Controller
      */
     public function destroy(Post $post): RedirectResponse
     {
+        Gate::authorize('delete', $post);
+
         $post->delete();
 
         return redirect()

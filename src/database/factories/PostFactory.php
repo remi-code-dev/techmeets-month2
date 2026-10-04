@@ -4,6 +4,7 @@ namespace Database\Factories;
 
 use App\Models\Category;
 use App\Models\Post;
+use App\Models\User;
 use Illuminate\Database\Eloquent\Factories\Factory;
 
 /**
@@ -57,6 +58,7 @@ class PostFactory extends Factory
             ->implode("\n\n");
 
         return [
+            'user_id' => User::factory(),
             'category_id' => Category::inRandomOrder()->value('id') ?? Category::factory(),
             'title' => fake()->randomElement(self::TITLES),
             'content' => $paragraphs,
