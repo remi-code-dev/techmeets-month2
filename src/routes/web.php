@@ -1,14 +1,33 @@
 <?php
 
-use App\Http\Controllers\EventController;
+use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\PostController;
+use App\Http\Controllers\CommentController;
+use App\Http\Controllers\EventController;
 use App\Http\Controllers\ReservationController;
 use Illuminate\Support\Facades\Route;
 
-Route::redirect('/', '/posts');
+Route::get('/', function () {
+    return view('welcome');
+});
 
-Route::resource('posts', PostController::class);
+Route::get('/dashboard', function () {
+    return view('dashboard');
+})->middleware(['auth', 'verified'])->name('dashboard');
 
+// 掲示板
+Route::get('/comments', [CommentController::class, 'index'])
+    ->name('comments.index');
+
+Route::post('/comments', [CommentController::class, 'store'])
+    ->middleware(['auth', 'throttle:10,1'])
+    ->name('comments.store');
+
+Route::delete('/comments/{comment}', [CommentController::class, 'destroy'])
+    ->middleware('auth')
+    ->name('comments.destroy');
+
+// イベント予約
 Route::resource('events', EventController::class)->only(['index', 'create', 'store', 'show']);
 
 Route::get('events/{event}/reservations/create', [ReservationController::class, 'create'])
@@ -19,3 +38,13 @@ Route::get('reservations', [ReservationController::class, 'index'])
     ->name('reservations.index');
 Route::patch('reservations/{reservation}/cancel', [ReservationController::class, 'cancel'])
     ->name('reservations.cancel');
+
+Route::middleware('auth')->group(function () {
+    Route::get('/profile', [ProfileController::class, 'edit'])->name('profile.edit');
+    Route::patch('/profile', [ProfileController::class, 'update'])->name('profile.update');
+    Route::delete('/profile', [ProfileController::class, 'destroy'])->name('profile.destroy');
+
+    Route::resource('posts', PostController::class);
+});
+
+require __DIR__.'/auth.php';

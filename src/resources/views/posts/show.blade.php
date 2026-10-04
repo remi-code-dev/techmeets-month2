@@ -1,4 +1,4 @@
-@extends('layouts.app')
+@extends('layouts.blog')
 
 @section('title', $post->title)
 
@@ -10,6 +10,8 @@
             <span class="badge bg-secondary mb-2">{{ $post->category->name }}</span>
             <h1 class="card-title h2">{{ $post->title }}</h1>
             <p class="text-muted small">
+                投稿者: {{ $post->user?->name ?? '不明' }}
+                /
                 投稿日: {{ $post->created_at->format('Y/m/d H:i') }}
                 @if ($post->created_at->ne($post->updated_at))
                     （更新日: {{ $post->updated_at->format('Y/m/d H:i') }}）
@@ -20,13 +22,17 @@
     </div>
 
     <div class="mt-3 d-flex gap-2">
-        <a href="{{ route('posts.edit', $post) }}" class="btn btn-primary">編集</a>
+        @can('update', $post)
+            <a href="{{ route('posts.edit', $post) }}" class="btn btn-primary">編集</a>
+        @endcan
 
-        <form action="{{ route('posts.destroy', $post) }}" method="POST"
-              onsubmit="return confirm('本当に削除しますか？');">
-            @csrf
-            @method('DELETE')
-            <button type="submit" class="btn btn-danger">削除</button>
-        </form>
+        @can('delete', $post)
+            <form action="{{ route('posts.destroy', $post) }}" method="POST"
+                  onsubmit="return confirm('本当に削除しますか？');">
+                @csrf
+                @method('DELETE')
+                <button type="submit" class="btn btn-danger">削除</button>
+            </form>
+        @endcan
     </div>
 @endsection

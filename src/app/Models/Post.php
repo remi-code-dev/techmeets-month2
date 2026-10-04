@@ -29,4 +29,12 @@ class Post extends Model
     {
         return $this->belongsTo(Category::class);
     }
+
+    /**
+     * この投稿の投稿者
+     */
+    public function user(): BelongsTo
+    {
+        return $this->belongsTo(User::class);
+    }
 }
