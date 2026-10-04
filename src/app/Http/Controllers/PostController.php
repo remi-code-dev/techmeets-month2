@@ -2,8 +2,7 @@
 
 namespace App\Http\Controllers;
 
-use App\Http\Requests\StorePostRequest;
-use App\Http\Requests\UpdatePostRequest;
+use App\Http\Requests\PostRequest;
 use App\Models\Category;
 use App\Models\Post;
 use Illuminate\Http\RedirectResponse;
@@ -36,7 +35,7 @@ class PostController extends Controller
     /**
      * 投稿の保存
      */
-    public function store(StorePostRequest $request): RedirectResponse
+    public function store(PostRequest $request): RedirectResponse
     {
         $post = Post::create($request->validated());
 
@@ -72,7 +71,7 @@ class PostController extends Controller
     /**
      * 投稿の更新
      */
-    public function update(UpdatePostRequest $request, Post $post): RedirectResponse
+    public function update(PostRequest $request, Post $post): RedirectResponse
     {
         if ($post->user_id !== auth()->id()) {
             abort(403, 'この操作は許可されていません');
