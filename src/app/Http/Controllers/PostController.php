@@ -2,97 +2,53 @@
 
 namespace App\Http\Controllers;
 
-use App\Http\Requests\PostRequest;
-use App\Models\Category;
-use App\Models\Post;
-use Illuminate\Http\RedirectResponse;
-use Illuminate\Support\Facades\Gate;
-use Illuminate\View\View;
+use App\Services\PostService;
+use App\Repositories\PostRepository;
+use Illuminate\Http\Request;
 
 class PostController extends Controller
 {
-    /**
-     * 投稿一覧表示（ページネーション付き）
-     */
-    public function index(): View
-    {
-        $posts = Post::with('category')
-            ->latest()
-            ->paginate(10);
+    public function __construct(
+        private PostService $postService,
+        private PostRepository $postRepository
+    ) {}
 
+    public function index()
+    {
+        $posts = $this->postRepository->getPublished();
         return view('posts.index', compact('posts'));
     }
 
-    /**
-     * 投稿作成フォームの表示
-     */
-    public function create(): View
+    public function store(Request $request)
     {
-        $categories = Category::orderBy('name')->get();
+        $validated = $request->validate([
+            'title' => 'required|max:200',
+            'content' => 'required',
+            'image' => 'nullable|image|max:2048',
+        ]);
 
-        return view('posts.create', compact('categories'));
-    }
+        $validated['user_id'] = auth()->id();
 
-    /**
-     * 投稿の保存
-     */
-    public function store(PostRequest $request): RedirectResponse
-    {
-        // 投稿者はリクエストではなくログインユーザーから設定する
-        $post = $request->user()->posts()->create($request->validated());
+        // コントローラーは「受け取って渡す」だけ。処理の詳細はServiceに任せる
+        $post = $this->postService->createPost($validated);
 
         return redirect()
             ->route('posts.show', $post)
-            ->with('status', '投稿を作成しました。');
+            ->with('success', '投稿を作成しました');
     }
 
-    /**
-     * 投稿詳細表示
-     */
-    public function show(Post $post): View
+    public function update(Request $request, int $id)
     {
-        $post->load(['category', 'user']);
+        $validated = $request->validate([
+            'title' => 'required|max:200',
+            'content' => 'required',
+            'image' => 'nullable|image|max:2048',
+        ]);
 
-        return view('posts.show', compact('post'));
-    }
-
-    /**
-     * 投稿編集フォームの表示
-     */
-    public function edit(Post $post): View
-    {
-        Gate::authorize('update', $post);
-
-        $categories = Category::orderBy('name')->get();
-
-        return view('posts.edit', compact('post', 'categories'));
-    }
-
-    /**
-     * 投稿の更新
-     */
-    public function update(PostRequest $request, Post $post): RedirectResponse
-    {
-        Gate::authorize('update', $post);
-
-        $post->update($request->validated());
+        $post = $this->postService->updatePost($id, $validated);
 
         return redirect()
             ->route('posts.show', $post)
-            ->with('status', '投稿を更新しました。');
-    }
-
-    /**
-     * 投稿の削除
-     */
-    public function destroy(Post $post): RedirectResponse
-    {
-        Gate::authorize('delete', $post);
-
-        $post->delete();
-
-        return redirect()
-            ->route('posts.index')
-            ->with('status', '投稿を削除しました。');
+            ->with('success', '投稿を更新しました');
     }
 }
