@@ -69,6 +69,30 @@ Docker Compose上のLaravel(MVC)で作成した学習用アプリです。
 - バリデーション: タイトルは必須・255文字以内、内容は必須、カテゴリーは必須かつ存在するもの。作成・更新で共通の `PostRequest` を使います。エラーは各入力欄の下に日本語で表示され、入力値は保持されます。
 - Bladeレイアウト継承: ブログとイベント予約の画面は `layouts/blog.blade.php`(Bootstrap)を継承し、作成・編集フォームは `posts/_form.blade.php` を共通化しています。認証と掲示板の画面は Breeze の `layouts/app.blade.php`(Tailwind CSS)を使います。
 
+#### 設計(Repository / Service パターン)
+
+コントローラーに処理を詰め込まないよう、役割ごとにクラスを分けています。
+
+```
+リクエスト → PostRequest(バリデーション)
+          → PostController(受け取って渡すだけ)
+              ├─ PostPolicy(編集・削除の権限チェック)
+              ├─ PostService(処理の流れ)
+              │    └─ PostRepository(DB 操作)
+              └─ PostRepository / CategoryRepository(表示用データの取得)
+```
+
+| クラス | 役割 |
+| --- | --- |
+| `app/Http/Controllers/PostController.php` | リクエストを受け取り、Service / Repository を呼んで画面を返すだけにしています |
+| `app/Services/PostService.php` | 投稿の作成・更新・削除。トランザクション(`DB::transaction`)とログ記録もここで行います |
+| `app/Repositories/PostRepository.php` | 投稿の取得・保存などの Eloquent 操作をまとめています |
+| `app/Repositories/CategoryRepository.php` | 投稿フォームのカテゴリー一覧を取得します |
+| `app/Policies/PostPolicy.php` | 「投稿者本人だけが編集・削除できる」というルールを定義します |
+
+- Service と Repository はコンストラクタインジェクションで受け取ります(Laravel のサービスコンテナが自動で生成します)。
+- 認可はコントローラーで `$this->authorize('update', $post)` のように呼び、権限がなければ自動で 403 を返します。`$this->authorize()` を使えるように、基底の `Controller` に `AuthorizesRequests` トレイトを追加しています。
+
 ### イベント予約システム
 
 | 機能 | URL | 説明 |
@@ -192,7 +216,9 @@ src/
 │   │   │                  ProfileController, Auth/(Breeze)
 │   │   └── Requests/      PostRequest, StoreEventRequest, StoreReservationRequest
 │   ├── Models/            User, Comment, Post, Category, Event, Reservation
-│   └── Policies/          CommentPolicy, PostPolicy
+│   ├── Policies/          CommentPolicy, PostPolicy
+│   ├── Repositories/      PostRepository, CategoryRepository
+│   └── Services/          PostService
 ├── database/
 │   ├── migrations/        users, comments, categories, posts, events, reservations
 │   ├── factories/
@@ -311,3 +337,12 @@ docker compose exec app php artisan test
 ```
 
 テストは SQLite のインメモリ DB で実行されるため、MySQL のデータには影響しません。
+
+### 8.week9/Repository/Service層の実装
+Before
+- ControllerにDB処理やビジネスロジックが書かれていた
+After
+- DB処理をPostRepositoryへ移動
+- ビジネスロジックをPostServiceへ移動
+- PostPolicyを作成して認可を管理
+- Controllerをシンプルな構成に変更

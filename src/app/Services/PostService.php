@@ -2,11 +2,13 @@
 
 namespace App\Services;
 
+use App\Models\Post;
+use App\Models\User;
 use App\Repositories\PostRepository;
 use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Facades\Log;
 
+// Service: 投稿に関する処理の流れ（トランザクション・ログなど）を担当する
 class PostService
 {
     // コンストラクタインジェクション（DIパターン、次のSection 4で詳しく説明）
@@ -20,38 +22,22 @@ class PostService
         private PostRepository $postRepository
     ) {}
 
-    public function createPost(array $data)
+    public function createPost(User $user, array $data)
     {
         // DB::transaction(): この中の処理が全て成功すれば確定、途中でエラーが起きたら全て取り消す
-        return DB::transaction(function () use ($data) {
-            // 1. 投稿作成
-            $post = $this->postRepository->create($data);
+        return DB::transaction(function () use ($user, $data) {
+            $post = $this->postRepository->createForUser($user, $data);
 
-            // 2. 画像処理
-            if (isset($data['image'])) {
-                $this->processImage($post, $data['image']);
-            }
-
-            // 3. 通知送信
-            $this->sendNotifications($post);
-
-            // 4. ログ記録
             Log::info('Post created', ['post_id' => $post->id]);
 
             return $post;
         });
     }
 
-    public function updatePost(int $id, array $data)
+    public function updatePost(Post $post, array $data)
     {
-        $post = $this->postRepository->findById($id);
-
         return DB::transaction(function () use ($post, $data) {
             $updated = $this->postRepository->update($post, $data);
-
-            if (isset($data['image'])) {
-                $this->processImage($updated, $data['image']);
-            }
 
             Log::info('Post updated', ['post_id' => $updated->id]);
 
@@ -59,15 +45,10 @@ class PostService
         });
     }
 
-    // privateメソッド: このクラス内からしか呼べない（外部に公開する必要がない処理）
-    private function processImage($post, $image)
+    public function deletePost(Post $post)
     {
-        $path = $image->store('posts');
-        $post->update(['image_path' => $path]);
-    }
+        $this->postRepository->delete($post);
 
-    private function sendNotifications($post)
-    {
-        Mail::to($post->user)->send(new PostCreated($post));
+        Log::info('Post deleted', ['post_id' => $post->id]);
     }
 }
