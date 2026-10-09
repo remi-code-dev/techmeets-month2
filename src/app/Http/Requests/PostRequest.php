@@ -5,7 +5,10 @@ namespace App\Http\Requests;
 use Illuminate\Contracts\Validation\ValidationRule;
 use Illuminate\Foundation\Http\FormRequest;
 
-class UpdatePostRequest extends FormRequest
+/**
+ * 投稿の作成・更新で共通のバリデーション
+ */
+class PostRequest extends FormRequest
 {
     /**
      * Determine if the user is authorized to make this request.
